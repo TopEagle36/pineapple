@@ -80,6 +80,12 @@ export const contract = {
 
 ## Project Running
 
+### Install dependencies
+
+```bash
+npm install
+```
+
 ### Running on developer mode
 
 ```bash
