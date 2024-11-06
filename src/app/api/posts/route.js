@@ -13,6 +13,7 @@ export async function GET() {
 
 const gpt_api_key = process.env.CHATGPT_API_KEY;
 const endpoint = 'https://api.openai.com/v1/chat/completions';
+const amtPerCall = 10;
 
 async function getGPTResponse(query) {
   try {
@@ -41,16 +42,119 @@ async function getGPTResponse(query) {
 }
 
 export async function POST(request) {
-  console.log('come here?');
-  const client = await clientPromise;
-  const db = client.db('gpt_visits');
-  console.log('gpt_ai_key', gpt_api_key);
   const post = await request.json();
-  const message = await getGPTResponse(post.query);
-  console.log('message here', message);
-  const result = await db.collection('posts').insertOne(post);
-  console.log('result', result);
-  return new Response(JSON.stringify(result), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+
+  const client = await clientPromise;
+  const timestamp = new Date().getTime() / 1000; //time in second
+  const db = client.db('gpt_visits');
+  const user_gpt_usage = await db.collection('posts').findOne({ address: post.address });
+  console.log('come here 1');
+
+  if (user_gpt_usage) {
+    console.log('come here 2', user_gpt_usage);
+    const filter = { address: post.address };
+    if (timestamp - user_gpt_usage.timestamp >= 24 * 60 * 60) {
+      const update = {
+        $set: { timestamp: timestamp, holding: post.pineappleAmt, usage: amtPerCall },
+      };
+      const result = await db.collection('posts').updateOne(filter, update);
+      const message = await getGPTResponse(post.query);
+      return new Response(
+        JSON.stringify({
+          type: 'success',
+          holding: post.pineappleAmt,
+          usage: user_gpt_usage.usage,
+          message: message,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    } else {
+      if (post.pineappleAmt - user_gpt_usage.usage >= amtPerCall) {
+        const update = {
+          $set: { holding: post.pineappleAmt, usage: user_gpt_usage.usage + amtPerCall },
+        };
+        const result = await db.collection('posts').updateOne(filter, update);
+        const message = await getGPTResponse(post.query);
+        return new Response(
+          JSON.stringify({
+            type: 'success',
+            holding: post.pineappleAmt,
+            usage: user_gpt_usage.usage,
+            message: message,
+          }),
+          {
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({
+            type: 'limit reached',
+            holding: post.pineappleAmt,
+            usage: user_gpt_usage.usage,
+            message: '',
+          }),
+          {
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+  } else {
+    console.log('come here 3');
+    const result = await db.collection('posts').insertOne({
+      address: post.address,
+      holding: post.pineappleAmt,
+      usage: amtPerCall,
+      timestamp: timestamp,
+    });
+    const message = await getGPTResponse(post.query);
+    return new Response(
+      JSON.stringify({
+        type: 'success',
+        holding: post.pineappleAmt,
+        usage: amtPerCall,
+        message: message,
+      }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 }
+
+// response type
+// {
+//   "id": "chatcmpl-AQOusZUeHzNkhpqISXyLcpOFiDJme",
+//   "object": "chat.completion",
+//   "created": 1730855670,
+//   "model": "gpt-4-0613",
+//   "choices": [
+//       {
+//           "index": 0,
+//           "message": {
+//               "role": "assistant",
+//               "content": "As an artificial intelligence, I don't have a job in the traditional sense. However, I'm designed for various tasks like answering your questions accurately, providing information, setting alarms, managing tasks, sending reminders, and overall to assist you in any way I can.",
+//               "refusal": null
+//           },
+//           "logprobs": null,
+//           "finish_reason": "stop"
+//       }
+//   ],
+//   "usage": {
+//       "prompt_tokens": 12,
+//       "completion_tokens": 53,
+//       "total_tokens": 65,
+//       "prompt_tokens_details": {
+//           "cached_tokens": 0
+//       },
+//       "completion_tokens_details": {
+//           "reasoning_tokens": 0,
+//           "accepted_prediction_tokens": 0,
+//           "rejected_prediction_tokens": 0
+//       }
+//   },
+//   "system_fingerprint": null
+// }

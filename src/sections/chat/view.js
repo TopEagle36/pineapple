@@ -76,7 +76,7 @@ export default function ChatPage() {
   };
 
   const handleSubmit = () => {
-    if (pineappleAmt == 0) {
+    if (pineappleAmt < 10) {
       enqueueSnackbar(
         "You don't have enough Pineapple token in your wallet. Please purchase some Pineapple to use!",
         { variant: 'error' }
