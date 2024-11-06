@@ -11,6 +11,7 @@ import Tabs from '@mui/material/Tabs';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
+import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Unstable_Grid2';
 import InputAdornment from '@mui/material/InputAdornment';
 import { Button, Card, Stack } from '@mui/material';
@@ -30,6 +31,7 @@ export default function ChatPage() {
   const { enqueueSnackbar } = useSnackbar();
   const settings = useSettingsContext();
   const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
   const [sentences, setSentences] = useState([]);
   const { address } = useAccount();
   const chainId = useChainId();
@@ -64,6 +66,9 @@ export default function ChatPage() {
   };
 
   const fetchPosts = async () => {
+    setLoading(true);
+    sentences.push('...');
+    setSentences(sentences);
     const res = await fetch('/api/posts', {
       method: 'POST',
       headers: {
@@ -71,8 +76,11 @@ export default function ChatPage() {
       },
       body: JSON.stringify({ query: inputValue, address, pineappleAmt }),
     });
+    sentences.pop();
+    setSentences(sentences);
     const data = await res.json();
     console.log('data', data);
+    setLoading(false);
   };
 
   const handleSubmit = () => {
@@ -133,14 +141,28 @@ export default function ChatPage() {
       >
         <TextField
           variant="filled"
+          // variant="outlined"
           fullWidth
           multiline
+          disabled={loading}
           placeholder="What you want to know?"
           label="Message to ask!"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+        {loading && (
+          <CircularProgress
+            size={24}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              marginTop: -12,
+              marginLeft: -12,
+            }}
+          />
+        )}
       </Box>
     </Container>
   );
