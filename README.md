@@ -10,6 +10,7 @@ Pineapple app uses chatgpt endpoint. Call limits per day is calculated the holdi
 
 ```bash
 npm install -g npm@latest
+npm install -g yarn
 npm install -g hardhat
 ```
 
@@ -83,20 +84,20 @@ export const contract = {
 ### Install dependencies
 
 ```bash
-npm install
+yarn
 ```
 
 ### Running on developer mode
 
 ```bash
-npm run dev
+yarn run dev
 ```
 
 ### Running on product mode
 
 ```bash
-npm run build
-npm start
+yarn run build
+yarn start
 ```
 
 ## Additional Resources

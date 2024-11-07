@@ -6,8 +6,6 @@ const options = {
   useUnifiedTopology: true,
 };
 
-let client;
-let clientPromise;
 
 // if (process.env.NODE_ENV === 'development') {
 //   // In development mode, use a global variable to preserve the MongoDB client
@@ -21,6 +19,6 @@ let clientPromise;
 
 // }
 
-client = new MongoClient(uri, options);
-clientPromise = client.connect();
+const client = new MongoClient(uri, options);
+const clientPromise = client.connect();
 export default clientPromise;

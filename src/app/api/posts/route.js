@@ -31,9 +31,10 @@ async function getGPTResponse(query) {
         },
       }
     );
-
-    const message = response.data.choices[0].message.content;
-    console.log('GPT Response:', message);
+    let message = '';
+    for (let i = 0; i< response.data.choices.length; i+= 1){
+      message+= response.data.choices[i].message.content;
+    }
 
     return message;
   } catch (error) {
@@ -48,14 +49,12 @@ export async function POST(request) {
   const timestamp = new Date().getTime() / 1000; //time in second
   const db = client.db('gpt_visits');
   const user_gpt_usage = await db.collection('posts').findOne({ address: post.address });
-  console.log('come here 1');
 
   if (user_gpt_usage) {
-    console.log('come here 2', user_gpt_usage);
     const filter = { address: post.address };
     if (timestamp - user_gpt_usage.timestamp >= 24 * 60 * 60) {
       const update = {
-        $set: { timestamp: timestamp, holding: post.pineappleAmt, usage: amtPerCall },
+        $set: { timestamp, holding: post.pineappleAmt, usage: amtPerCall },
       };
       const result = await db.collection('posts').updateOne(filter, update);
       const message = await getGPTResponse(post.query);
@@ -64,7 +63,7 @@ export async function POST(request) {
           type: 'success',
           holding: post.pineappleAmt,
           usage: user_gpt_usage.usage,
-          message: message,
+          message,
         }),
         {
           headers: { 'Content-Type': 'application/json' },
@@ -82,7 +81,7 @@ export async function POST(request) {
             type: 'success',
             holding: post.pineappleAmt,
             usage: user_gpt_usage.usage,
-            message: message,
+            message,
           }),
           {
             headers: { 'Content-Type': 'application/json' },
@@ -108,7 +107,7 @@ export async function POST(request) {
       address: post.address,
       holding: post.pineappleAmt,
       usage: amtPerCall,
-      timestamp: timestamp,
+      timestamp,
     });
     const message = await getGPTResponse(post.query);
     return new Response(
@@ -116,7 +115,7 @@ export async function POST(request) {
         type: 'success',
         holding: post.pineappleAmt,
         usage: amtPerCall,
-        message: message,
+        message,
       }),
       {
         headers: { 'Content-Type': 'application/json' },

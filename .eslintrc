@@ -37,6 +37,8 @@
     "react-hooks/exhaustive-deps": "off",
     "prefer-template": "off",
     "consistent-return": "off",
+    "no-else-return": "off",
+    "no-lonely-if": "off",
     "no-alert": 0,
     "camelcase": 0,
     "no-console": 0,

@@ -23,9 +23,6 @@ import { config } from 'src/config';
 // ----------------------------------------------------------------------
 import { contract } from '../../constant/contract';
 
-const defaultFilters = {
-  publish: 'all',
-};
 
 export default function ChatPage() {
   const { enqueueSnackbar } = useSnackbar();
@@ -79,7 +76,18 @@ export default function ChatPage() {
     sentences.pop();
     setSentences(sentences);
     const data = await res.json();
-    console.log('data', data);
+    if(data?.type === 'success'){
+      sentences.push(data.message);
+      setSentences(sentences);
+    }else if(data?.type === 'limit reached'){
+      const limitPerday = Math.floor(data.holding/10);
+      const usage = Math.floor(data.usage/10);
+      sentences.push(`You've reached ${usage}/${limitPerday} daily limit of usage. Please fund more Pineapple token or try one day after!`);
+      setSentences(sentences);
+    }else{
+      sentences.push(`You've reached daily limit of usage. Please fund more Pineapple token or try one day after!`);
+      setSentences(sentences);
+    }
     setLoading(false);
   };
 
@@ -96,18 +104,15 @@ export default function ChatPage() {
     setSentences(sentences);
     fetchPosts();
   };
-  const renderSentences = () => {
-    console.log('sentencets', sentences);
-
-    return (
+  const renderSentences = () =>(
       <Box sx={{ marginBottom: 3 }}>
         {sentences.map((sentence, index) => (
-          <Stack key={index} alignItems={(index + 1) % 2 == 1 && 'flex-end'}>
+          <Stack key={index} alignItems={(index + 1) % 2 === 1 && 'flex-end'}>
             <Card
               key={index}
               // fullWidth
               sx={{
-                maxWidth: (index + 1) % 2 == 1 ? 300 : 'auto', // Set your desired max width
+                maxWidth: (index + 1) % 2 === 1 ? 300 : 'auto', // Set your desired max width
                 padding: 1, // Add some margin for spacing
                 margin: 1,
                 width: 'auto',
@@ -122,7 +127,6 @@ export default function ChatPage() {
         ))}
       </Box>
     );
-  };
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       {/* <Typography variant="h4"> Page One </Typography> */}
